@@ -2,7 +2,8 @@ name: Build and Push Docker image to AWS ECR
 
 on:
   push:
-    branches: [ "develop" ]
+    branches:
+      - develop
 
 jobs:
   build-and-push:
