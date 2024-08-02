@@ -64,22 +64,24 @@ jobs:
 ################################################################
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
+        aws-region: ap-south-1
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-south-1
 
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        mask-password: 'false'
 
-    - name: Extract repository name
-      id: repo-name
-      run: |
-        REPO_NAME="${GITHUB_REPOSITORY##*/}"
-        echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
-        echo "::set-output name=repo_name::$REPO_NAME"
+    # - name: Extract repository name
+    #   id: repo-name
+    #   run: |
+    #     REPO_NAME="${GITHUB_REPOSITORY##*/}"
+    #     echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+    #     echo "::set-output name=repo_name::$REPO_NAME"
 
     - name: Build Docker image
       env:
