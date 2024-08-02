@@ -16,7 +16,7 @@ jobs:
       - name: Check out the repo
         uses: action/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_TOKEN }}
           fetch-depth: 0 # Necessary to fetch all tags and history
 
 ################################################################
