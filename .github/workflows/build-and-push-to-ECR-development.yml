@@ -3,7 +3,7 @@ name: Build and Push Docker image to AWS ECR
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   build-and-push:
@@ -15,23 +15,6 @@ jobs:
       with:
         fetch-depth: 0 # Necessary to fetch all tags and history
 
-################################################################
-###               SONAR CLOUD SCAN                           ###
-### Drops the build if any bugs or vulnerabilities are found.###
-###            Using the default quality gate.               ###
-###        Connected to my personal Sonar Cloud account      ###
-################################################################
-
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-    - name: Setup Git
-      run: |
-        git config --global user.name 'github-actions'
-        git config --global user.email 'github-actions@github.com'
 
 ################################################################
 ###               DETERMINE NEXT VERSION                     ###
@@ -68,7 +51,7 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
       with:
         tag_name: ${{ steps.next_version.outputs.tag }}
         release_name: Release ${{ steps.next_version.outputs.tag }}
@@ -141,32 +124,3 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         # Push the latest tag
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-    - name: Deploy to EC2
-      env:
-        EC2_PEM_KEY: ${{ secrets.EC2_PEM_KEY }}
-        EC2_HOST: ${{ secrets.EC2_HOST }}
-        EC2_USER: ${{ secrets.EC2_USER }}
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: counter-service-exercise
-        IMAGE_TAG: ${{ steps.next_version.outputs.tag }}
-      run: |
-        # Save PEM key to file and set permissions
-        echo "$EC2_PEM_KEY" > ec2.pem
-        chmod 400 ec2.pem
-
-        # SSH, SCP commands
-        SSH_COMMAND="ssh -i ec2.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST"
-        SCP_COMMAND="scp -i ec2.pem -o StrictHostKeyChecking=no"
-
-        #Login to Docker registry
-        $SSH_COMMAND "aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $ECR_REGISTRY"
-        
-        # Copy docker-compose.yml to EC2 server
-        $SCP_COMMAND docker-compose.yml $EC2_USER@$EC2_HOST:/home/ubuntu/docker/
-        
-        # Pull and run the Docker container on EC2
-        $SSH_COMMAND "cd /home/ubuntu/docker/ && docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG && docker compose -f docker-compose.yml up -d --force-recreate"
-        
-        # Cleanup PEM key
-        rm -f ec2.pem
