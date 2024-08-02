@@ -14,9 +14,8 @@ jobs:
 
     steps:
       - name: Check out the repo
-        uses: action/checkout@v4
+        uses: action/checkout@v2
         with:
-          token: ${{ secrets.MY_TOKEN }}
           fetch-depth: 0 # Necessary to fetch all tags and history
 
 ################################################################
